@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cobradores</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <script src="../assets/auth.js"></script>
+  <script src="../assets/api.js"></script>
+  <script src="../assets/ui.js"></script>
+  <script>
+    requireRole("admin");
+
+    async function loadCollectors() {
+      const data = await apiFetch("/users/collectors");
+      return data.items || [];
+    }
+
+    async function renderPage() {
+      const collectors = await loadCollectors();
+
+      sidebarLayout({
+        role: "admin",
+        active: "collectors",
+        title: "Gestión de cobradores",
+        subtitle: "Crea, consulta y habilita o deshabilita cobradores.",
+        content: `
+          <div class="card" style="margin-bottom:18px;">
+            <div class="section-header">
+              <div>
+                <strong>Nuevo cobrador</strong>
+                <div class="small">Completa los datos para registrar un nuevo cobrador.</div>
+              </div>
+            </div>
+
+            <form id="collectorForm" class="form-grid">
+              <input id="name" placeholder="Nombre completo" required />
+              <input id="email" placeholder="Correo electrónico" type="email" required />
+              <input id="phone" placeholder="Teléfono" />
+              <input id="password" placeholder="Contraseña" type="password" required />
+              <button class="btn-primary" type="submit">Crear cobrador</button>
+            </form>
+          </div>
+
+          <div class="card">
+            <div class="section-header">
+              <div>
+                <strong>Listado de cobradores</strong>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Teléfono</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${collectors.map((item) => `
+                    <tr>
+                      <td>${item.name}</td>
+                      <td>${item.email}</td>
+                      <td>${item.phone || "-"}</td>
+                      <td>${item.isActive ? "Activo" : "Deshabilitado"}</td>
+                      <td>
+                        <button class="btn-muted" onclick="toggleCollector('${item._id}', ${!item.isActive})">
+                          ${item.isActive ? "Deshabilitar" : "Habilitar"}
+                        </button>
+                      </td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `
+      });
+
+      document.getElementById("collectorForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        try {
+          await apiFetch("/users/collectors", {
+            method: "POST",
+            body: JSON.stringify({
+              name: document.getElementById("name").value.trim(),
+              email: document.getElementById("email").value.trim(),
+              phone: document.getElementById("phone").value.trim(),
+              password: document.getElementById("password").value.trim()
+            })
+          });
+
+          alert("Cobrador creado correctamente");
+          window.location.reload();
+        } catch (error) {
+          alert(error.message);
+        }
+      });
+    }
+
+    async function toggleCollector(id, isActive) {
+      try {
+        await apiFetch(`/users/collectors/${id}/active`, {
+          method: "PATCH",
+          body: JSON.stringify({ isActive })
+        });
+
+        window.location.reload();
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    renderPage().catch((err) => alert(err.message));
+  </script>
+</body>
+</html>

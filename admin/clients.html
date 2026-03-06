@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clientes Admin</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <script src="../assets/auth.js"></script>
+  <script src="../assets/api.js"></script>
+  <script src="../assets/ui.js"></script>
+  <script>
+    requireRole("admin");
+
+    async function loadPage() {
+      const [clients, collectorsData] = await Promise.all([
+        apiFetch("/clients"),
+        apiFetch("/users/collectors")
+      ]);
+
+      const items = clients.items || [];
+      const collectors = collectorsData.items || [];
+
+      sidebarLayout({
+        role: "admin",
+        active: "clients",
+        title: "Clientes",
+        subtitle: "Registro y consulta general de clientes.",
+        content: `
+          <div class="card" style="margin-bottom:18px;">
+            <div class="section-header">
+              <div>
+                <strong>Registrar cliente</strong>
+              </div>
+            </div>
+
+            <form id="clientForm" class="form-grid">
+              <input id="name" placeholder="Nombre completo" required />
+              <input id="documentId" placeholder="Cédula" required />
+              <input id="address" placeholder="Dirección" />
+              <input id="phone" placeholder="Celular" />
+              <select id="collectorId" required>
+                <option value="">Selecciona cobrador</option>
+                ${collectors
+                  .filter((c) => c.isActive)
+                  .map((c) => `<option value="${c._id}">${c.name}</option>`)
+                  .join("")}
+              </select>
+              <button class="btn-primary" type="submit">Guardar cliente</button>
+            </form>
+          </div>
+
+          <div class="card">
+            <div class="section-header">
+              <div>
+                <strong>Listado de clientes</strong>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Cédula</th>
+                    <th>Dirección</th>
+                    <th>Celular</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${items.map((client) => `
+                    <tr>
+                      <td>${client.name}</td>
+                      <td>${client.documentId}</td>
+                      <td>${client.address || "-"}</td>
+                      <td>${client.phone || "-"}</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `
+      });
+
+      document.getElementById("clientForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        try {
+          await apiFetch("/clients", {
+            method: "POST",
+            body: JSON.stringify({
+              name: document.getElementById("name").value.trim(),
+              documentId: document.getElementById("documentId").value.trim(),
+              address: document.getElementById("address").value.trim(),
+              phone: document.getElementById("phone").value.trim(),
+              collectorId: document.getElementById("collectorId").value
+            })
+          });
+
+          alert("Cliente registrado correctamente");
+          window.location.reload();
+        } catch (error) {
+          alert(error.message);
+        }
+      });
+    }
+
+    loadPage().catch((err) => alert(err.message));
+  </script>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Créditos Admin</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <script src="../assets/auth.js"></script>
+  <script src="../assets/api.js"></script>
+  <script src="../assets/ui.js"></script>
+  <script>
+    requireRole("admin");
+
+    async function loadPage() {
+      const [clientsData, creditsData, collectorsData] = await Promise.all([
+        apiFetch("/clients"),
+        apiFetch("/credits"),
+        apiFetch("/users/collectors")
+      ]);
+
+      const clients = clientsData.items || [];
+      const credits = creditsData.items || [];
+      const collectors = collectorsData.items || [];
+
+      sidebarLayout({
+        role: "admin",
+        active: "credits",
+        title: "Créditos",
+        subtitle: "Gestión general de préstamos registrados.",
+        content: `
+          <div class="card" style="margin-bottom:18px;">
+            <div class="section-header">
+              <div>
+                <strong>Registrar crédito</strong>
+              </div>
+            </div>
+
+            <form id="creditForm" class="form-grid">
+              <select id="clientId" required>
+                <option value="">Selecciona cliente</option>
+                ${clients.map((c) => `<option value="${c._id}">${c.name} · ${c.documentId}</option>`).join("")}
+              </select>
+
+              <select id="collectorId" required>
+                <option value="">Selecciona cobrador</option>
+                ${collectors
+                  .filter((c) => c.isActive)
+                  .map((c) => `<option value="${c._id}">${c.name}</option>`)
+                  .join("")}
+              </select>
+
+              <input type="date" id="originDate" required />
+              <input type="date" id="dueDate" required />
+              <input type="number" id="principalAmount" placeholder="Monto prestado" required />
+              <input type="number" id="totalToPay" placeholder="Monto total a pagar" required />
+              <button class="btn-primary" type="submit">Guardar crédito</button>
+            </form>
+          </div>
+
+          <div class="card">
+            <div class="section-header">
+              <div>
+                <strong>Listado de créditos</strong>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Cédula</th>
+                    <th>Cobrador</th>
+                    <th>Prestado</th>
+                    <th>Total a pagar</th>
+                    <th>Inicio</th>
+                    <th>Pago</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${credits.map((item) => `
+                    <tr>
+                      <td>${item.clientId?.name || "-"}</td>
+                      <td>${item.clientId?.documentId || "-"}</td>
+                      <td>${item.collectorId?.name || "-"}</td>
+                      <td>${money(item.principalAmount)}</td>
+                      <td>${money(item.totalToPay)}</td>
+                      <td>${formatDate(item.originDate)}</td>
+                      <td>${formatDate(item.dueDate)}</td>
+                      <td>
+                        <span class="badge ${item.status}">
+                          ${item.status === "paid" ? "Pagado" : "Pendiente"}
+                        </span>
+                      </td>
+                      <td>
+                        ${
+                          item.status === "pending"
+                            ? `<button class="btn-success" onclick="markAsPaid('${item._id}')">Marcar pagado</button>`
+                            : "-"
+                        }
+                      </td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `
+      });
+
+      document.getElementById("creditForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        try {
+          await apiFetch("/credits", {
+            method: "POST",
+            body: JSON.stringify({
+              clientId: document.getElementById("clientId").value,
+              collectorId: document.getElementById("collectorId").value,
+              originDate: document.getElementById("originDate").value,
+              dueDate: document.getElementById("dueDate").value,
+              principalAmount: document.getElementById("principalAmount").value,
+              totalToPay: document.getElementById("totalToPay").value
+            })
+          });
+
+          alert("Crédito registrado correctamente");
+          window.location.reload();
+        } catch (error) {
+          alert(error.message);
+        }
+      });
+    }
+
+    async function markAsPaid(id) {
+      try {
+        await apiFetch(`/credits/${id}/pay`, {
+          method: "PATCH"
+        });
+
+        alert("Crédito marcado como pagado");
+        window.location.reload();
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    loadPage().catch((err) => alert(err.message));
+  </script>
+</body>
+</html>

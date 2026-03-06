@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Admin</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <script src="../assets/auth.js"></script>
+  <script src="../assets/api.js"></script>
+  <script src="../assets/ui.js"></script>
+  <script>
+    requireRole("admin");
+
+    async function loadPage() {
+      const data = await apiFetch("/dashboard");
+      const m = data.metrics;
+
+      sidebarLayout({
+        role: "admin",
+        active: "dashboard",
+        title: "Dashboard administrador",
+        subtitle: "Resumen general de la operación del sistema.",
+        content: `
+          <div class="grid cards">
+            <div class="card">
+              <h3>Cobradores activos</h3>
+              <div class="metric">${m.activeCollectors}</div>
+            </div>
+            <div class="card">
+              <h3>Clientes registrados</h3>
+              <div class="metric">${m.totalClients}</div>
+            </div>
+            <div class="card">
+              <h3>Créditos pendientes</h3>
+              <div class="metric">${m.pendingCredits}</div>
+            </div>
+            <div class="card">
+              <h3>Créditos pagados</h3>
+              <div class="metric">${m.paidCredits}</div>
+            </div>
+          </div>
+        `
+      });
+    }
+
+    loadPage().catch((err) => {
+      alert(err.message);
+    });
+  </script>
+</body>
+</html>

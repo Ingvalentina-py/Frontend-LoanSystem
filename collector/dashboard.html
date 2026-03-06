@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Cobrador</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <script src="../assets/auth.js"></script>
+  <script src="../assets/api.js"></script>
+  <script src="../assets/ui.js"></script>
+  <script>
+    requireRole("collector");
+
+    async function loadPage() {
+      const data = await apiFetch("/dashboard");
+      const m = data.metrics;
+
+      sidebarLayout({
+        role: "collector",
+        active: "dashboard",
+        title: "Mi panel",
+        subtitle: "Resumen de clientes y créditos asignados.",
+        content: `
+          <div class="grid cards">
+            <div class="card">
+              <h3>Mis clientes</h3>
+              <div class="metric">${m.myClients}</div>
+            </div>
+            <div class="card">
+              <h3>Créditos pendientes</h3>
+              <div class="metric">${m.myPendingCredits}</div>
+            </div>
+            <div class="card">
+              <h3>Créditos pagados</h3>
+              <div class="metric">${m.myPaidCredits}</div>
+            </div>
+            <div class="card">
+              <h3>Total créditos</h3>
+              <div class="metric">${m.myTotalCredits}</div>
+            </div>
+          </div>
+        `
+      });
+    }
+
+    loadPage().catch((err) => {
+      alert(err.message);
+    });
+  </script>
+</body>
+</html>
