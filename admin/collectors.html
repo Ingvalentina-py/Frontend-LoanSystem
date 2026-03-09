@@ -36,10 +36,26 @@
             </div>
 
             <form id="collectorForm" class="form-grid">
-              <input id="name" placeholder="Nombre completo" required />
-              <input id="email" placeholder="Correo electrónico" type="email" required />
-              <input id="phone" placeholder="Teléfono" />
-              <input id="password" placeholder="Contraseña" type="password" required />
+              <div class="field-group">
+                <label class="field-label" for="name">Nombre completo</label>
+                <input id="name" placeholder="Nombre completo" required />
+              </div>
+
+              <div class="field-group">
+                <label class="field-label" for="email">Correo electrónico</label>
+                <input id="email" placeholder="Correo electrónico" type="email" required />
+              </div>
+
+              <div class="field-group">
+                <label class="field-label" for="phone">Teléfono</label>
+                <input id="phone" placeholder="Teléfono" />
+              </div>
+
+              <div class="field-group">
+                <label class="field-label" for="password">Contraseña</label>
+                <input id="password" placeholder="Contraseña" type="password" required />
+              </div>
+
               <button class="btn-primary" type="submit">Crear cobrador</button>
             </form>
           </div>
@@ -63,19 +79,23 @@
                   </tr>
                 </thead>
                 <tbody>
-                  ${collectors.map((item) => `
+                  ${collectors.length ? collectors.map((item) => `
                     <tr>
-                      <td>${item.name}</td>
-                      <td>${item.email}</td>
-                      <td>${item.phone || "-"}</td>
-                      <td>${item.isActive ? "Activo" : "Deshabilitado"}</td>
-                      <td>
+                      <td data-label="Nombre">${item.name}</td>
+                      <td data-label="Correo">${item.email}</td>
+                      <td data-label="Teléfono">${item.phone || "-"}</td>
+                      <td data-label="Estado">${item.isActive ? "Activo" : "Deshabilitado"}</td>
+                      <td data-label="Acción">
                         <button class="btn-muted" onclick="toggleCollector('${item._id}', ${!item.isActive})">
                           ${item.isActive ? "Deshabilitar" : "Habilitar"}
                         </button>
                       </td>
                     </tr>
-                  `).join("")}
+                  `).join("") : `
+                    <tr>
+                      <td data-label="Resultado">No hay cobradores registrados.</td>
+                    </tr>
+                  `}
                 </tbody>
               </table>
             </div>
@@ -97,10 +117,10 @@
             })
           });
 
-          alert("Cobrador creado correctamente");
-          window.location.reload();
+          showToast("Cobrador creado correctamente", "success");
+          setTimeout(() => window.location.reload(), 700);
         } catch (error) {
-          alert(error.message);
+          showToast(error.message, "error");
         }
       });
     }
@@ -112,13 +132,14 @@
           body: JSON.stringify({ isActive })
         });
 
-        window.location.reload();
+        showToast("Estado del cobrador actualizado", "success");
+        setTimeout(() => window.location.reload(), 700);
       } catch (error) {
-        alert(error.message);
+        showToast(error.message, "error");
       }
     }
 
-    renderPage().catch((err) => alert(err.message));
+    renderPage().catch((err) => showToast(err.message, "error"));
   </script>
 </body>
 </html>
