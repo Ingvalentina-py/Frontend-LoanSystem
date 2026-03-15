@@ -186,6 +186,20 @@ textarea {
   border-radius: 14px;
   outline: none;
 }
+select {
+  background-color: rgba(255,255,255,0.07);
+  color: var(--text);
+}
+
+select option {
+  background: #0d1b2f;
+  color: #eaf2ff;
+}
+
+select:focus option:checked {
+  background: #1d4ed8;
+  color: #ffffff;
+}
 
 input::placeholder,
 textarea::placeholder {
